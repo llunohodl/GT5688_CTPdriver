@@ -2,61 +2,33 @@
 #define __TOUCH_H__
 #include "bsp.h"    
 
-#define TP_PRES_DOWN 0x80  //触屏被按下	  
-#define TP_CATH_PRES 0x40  //有按键按下了 
-#define CT_MAX_TOUCH  5    //电容屏支持的点数,固定为5点
+#define TP_PRES_DOWN 0x80  //Touch screen is pressed	  
+#define TP_CATH_PRES 0x40  //There is a button pressed
+#define CT_MAX_TOUCH  5    //The number of points supported by the capacitive screen is fixed at 5 points.
 
-//触摸屏控制器
+//
+Touch screen controller
 typedef struct
 {
-	//u8 (*init)(void);			//初始化触摸屏控制器
-	void (*init)(void);			//初始化触摸屏控制器
-	u8 (*scan)(u8);				//扫描触摸屏.0,屏幕扫描;1,物理坐标;	  
-	u16 x[CT_MAX_TOUCH]; 		//当前坐标
-	u16 y[CT_MAX_TOUCH];		//电容屏有最多5组坐标,电阻屏则用x[0],y[0]代表:此次扫描时,触屏的坐标,用
-								//x[4],y[4]存储第一次按下时的坐标. 
-	u8  sta;					//笔的状态 
-								//b7:按下1/松开0; 
-	                            //b6:0,没有按键按下;1,有按键按下. 
-								//b5:保留
-								//b4~b0:电容触摸屏按下的点数(0,表示未按下,1表示按下)
-/////////////////////触摸屏校准参数(电容屏不需要校准)//////////////////////								
-	float xfac;					
-	float yfac;
-	short xoff;
-	short yoff;	   
-//新增的参数,当触摸屏的左右上下完全颠倒时需要用到.
-//b0:0,竖屏(适合左右为X坐标,上下为Y坐标的TP)
-//   1,横屏(适合左右为Y坐标,上下为X坐标的TP) 
-//b1~6:保留.
-//b7:0,电阻屏
-//   1,电容屏 
+	void (*init)(void);		//Initialize the touch screen controller
+	u8 (*scan)(u8);				//Scan the touch screen: 0, screen scan / 1, physical coordinates;	  
+	u16 x[CT_MAX_TOUCH]; 		//Current coordinates
+	u16 y[CT_MAX_TOUCH];		//The capacitive screen has a maximum of 5 sets of coordinates, 
+                                //and the resistive screen uses x[0], y[0] represents: 
+                                //the coordinates of the touch screen during this scan.
+								//x[4], y[4] stores the coordinates when the first press. 
+	u8  sta;					//Pen status:
+								//b7:Press 1 to release 0; 
+	                            //b6:0, no button press; 1, there is a button press.
+								//b5:Reserved
+								//b4-b0:The number of points pressed by the capacitive 
+                                //touch screen (0 means no press, 1 means press)
 	u8 touchtype;
 }_m_tp_dev;
 
-extern _m_tp_dev tp_dev;	 	//触屏控制器在touch.c里面定义
+extern _m_tp_dev tp_dev;	 	//The touch screen controller is defined in touch.c
 
-//电阻屏芯片连接引脚	   
-#define PEN     PHin(7)    //T_PEN
-#define DOUT    PGin(3)    //T_MISO
-#define TDIN    PIout(3)   //T_MOSI
-#define TCLK    PHout(6)   //T_SCK
-#define TCS     PIout(8)   //T_CS  
-   
-//电阻屏函数
-void TP_Write_Byte(u8 num);						  //向控制芯片写入一个数据
-u16 TP_Read_AD(u8 CMD);							    //读取AD转换值
-u16 TP_Read_XOY(u8 xy);							    //带滤波的坐标读取(X/Y)
-u8 TP_Read_XY(u16 *x,u16 *y);					  //双方向读取(X+Y)
-u8 TP_Read_XY2(u16 *x,u16 *y);					//带加强滤波的双方向坐标读取
-void TP_Drow_Touch_Point(u16 x,u16 y,u16 color);//画一个坐标校准点
-void TP_Draw_Big_Point(u16 x,u16 y,u16 color);	//画一个大点
-
-void TP_Adjust(void);							              //触摸屏校准
-void TP_Adj_Info_Show(u16 x0,u16 y0,u16 x1,u16 y1,u16 x2,u16 y2,u16 x3,u16 y3,u16 fac);//显示校准信息
-//电阻屏/电容屏 共用函数
-u8 TP_Scan(u8 tp);								//扫描
-//u8 TP_Init(void);								//初始化
+u8 TP_Scan(u8 tp);				
 void TP_Init(void);
  
 #endif

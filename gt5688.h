@@ -3,27 +3,27 @@
 #include "sys.h"	
 
 
-//IO操作函数	 
-#define GT_RST  PHout(6) //GT5688复位引脚
-#define GT_INT  PHin(7)  //GT5688中断引脚		
+//IO Operation function
+#define GT_RST  PHout(6) //GT5688 Reset pin
+#define GT_INT  PHin(7)  //GT5688 Interrupt pin		
  
-//I2C读写命令	
-#define GT_CMD_WR 		0X28     	//写命令
-#define GT_CMD_RD 		0X29		//读命令
+//Read and write I2C addreses
+#define GT_CMD_WR 		0X28
+#define GT_CMD_RD 		0X29
   
 
-//GT5688 部分寄存器定义 
-#define GT_CTRL_REG 	0X8040   	//GT5688控制寄存器
-#define GT_CFGS_REG 	0X8050   	//GT5688配置起始地址寄存器
-#define GT_CHECK_REG 	0X813C   	//GT5688校验和寄存器
-#define GT_PID_REG 		0X8140   	//GT5688产品ID寄存器
+//GT5688  Partial register definition 
+#define GT_CTRL_REG 	0X8040   	//GT5688 Control register
+#define GT_CFGS_REG 	0X8050   	//GT5688 Configuration start address register
+#define GT_CHECK_REG 	0X813C   	//GT5688 Checksum register
+#define GT_PID_REG 		0X8140   	//GT5688 Product ID register
 
-#define GT_GSTID_REG 	0X814E   	//GT5688当前检测到的触摸情况
-#define GT_TP1_REG 		0X8150  	//第一个触摸点数据地址
-#define GT_TP2_REG 		0X8158		//第二个触摸点数据地址
-#define GT_TP3_REG 		0X8160		//第三个触摸点数据地址
-#define GT_TP4_REG 		0X8168		//第四个触摸点数据地址
-#define GT_TP5_REG 		0X8170		//第五个触摸点数据地址  
+#define GT_GSTID_REG 	0X814E   	//GT5688  Currently detected touch situation
+#define GT_TP1_REG 		0X8150  	//First touch point data address
+#define GT_TP2_REG 		0X8158		//Second touch point data address
+#define GT_TP3_REG 		0X8160		//Third touch point data address
+#define GT_TP4_REG 		0X8168		//Fourth touch point data address
+#define GT_TP5_REG 		0X8170		//Fifth touch point data address  
  
 u8 GT5688_Send_Cfg(u8 mode);
 u8 GT5688_WR_Reg(u16 reg,u8 *buf,u8 len);
