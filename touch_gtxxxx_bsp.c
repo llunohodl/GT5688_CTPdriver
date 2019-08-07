@@ -1,7 +1,7 @@
+#include "main.h"
+
 #include "touch_gtxxxx_defs.h"
 #include "touch_gtxxxx.h"
-
-#include "main.h"
 
 extern I2C_HandleTypeDef hi2c1;  //main.c from CubeMX 
 void MX_I2C1_Init(void);         //main.c from CubeMX 

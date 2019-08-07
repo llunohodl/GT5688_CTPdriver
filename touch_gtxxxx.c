@@ -261,7 +261,7 @@ static void CTP_Touch_Up(void){   // touch screen output without carton
   * @param none
   * @retval none
   */
-static void CTP_TS_Work_Func(void){
+void CTP_TS_Work_Func(void){
 	static uint8_t IsTouch=0;
 	uint8_t  end_cmd[3] = {CTP_READ_COOR_ADDR >> 8, CTP_READ_COOR_ADDR & 0xFF, 0};
 	uint8_t  point_data[2 + 1 + 8 * CTP_MAX_TOUCH + 1]={CTP_READ_COOR_ADDR >> 8, CTP_READ_COOR_ADDR & 0xFF};
