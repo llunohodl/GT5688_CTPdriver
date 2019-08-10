@@ -304,7 +304,7 @@ void CTP_TS_Work_Func(void){
     }
 }
 
-#ifndef LVGL_H
+#if  LVGL_USED==0
 uint8_t CTP_read(uint16_t* x, uint16_t* y, uint8_t* pressed){
   ctMessageGet(x,y,pressed);
   return 0;
@@ -481,7 +481,6 @@ int32_t CTP_Init_Panel(void){
             break;
         }
     }
-    //Delay(0xfffff);
     ctDelay(1);
 		
 #if 1	
@@ -521,27 +520,25 @@ static int32_t CTP_Read_Version(void){
       if(buf[2] == '9' && buf[3] == '1' && buf[4] == '1'){
         CTP_INFO("IC1 Version: %c%c%c_%02x%02x", buf[2], buf[3], buf[4], buf[7], buf[6]);
         touchIC = GT911;
+        return 0;
       }
       //GT9157
-      else if( buf[2] == '9' && buf[3] == '1' && buf[4] == '5' && buf[5] == '7'){
+      if( buf[2] == '9' && buf[3] == '1' && buf[4] == '5' && buf[5] == '7'){
         CTP_INFO("IC2 Version: %c%c%c%c_%02x%02x", buf[2], buf[3], buf[4], buf[5], buf[7], buf[6]);
         touchIC = GT9157;
-      }else{
-         CTP_INFO("Unknown IC Version: %c%c%c%c_%02x%02x", buf[2], buf[3], buf[4], buf[5], buf[7], buf[6]);
+        return 0;
       }
     }    
-    else if (buf[2] == '5'){	
+    if (buf[2] == '5'){	
       //GT5688
       if(buf[2] == '5' && buf[3] == '6' && buf[4] == '8' && buf[5] == '8'){
         CTP_INFO("IC3 Version: %c%c%c%c_%02x%02x", buf[2], buf[3], buf[4], buf[5], buf[7], buf[6]);
         touchIC = GT5688;
-      }else{
-           CTP_INFO("Unknown IC Version: %c%c%c%c_%02x%02x", buf[2], buf[3], buf[4], buf[5], buf[7], buf[6]);
+        return 0;
       }
 
-    } else {
-       CTP_INFO("Unknown IC Version: %c%c%c%c_%02x%02x", buf[2], buf[3], buf[4], buf[5], buf[7], buf[6]);
-    }
+    } 
+    CTP_INFO("Unknown IC Version: %c%c%c%c_%02x%02x", buf[2], buf[3], buf[4], buf[5], buf[7], buf[6]);
     return ret;
 }
 

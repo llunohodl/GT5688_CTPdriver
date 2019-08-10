@@ -7,22 +7,73 @@ extern I2C_HandleTypeDef hi2c1;  //main.c from CubeMX
 void MX_I2C1_Init(void);         //main.c from CubeMX 
 void CTP_TS_Work_Func(void);     //touch_gtxxxx.c
 
-//OS dependet functions
-static int16_t ctX=0;
-static int16_t ctY=0;
-static uint8_t ctPress=0;
+#define OS_USED 1
 
-void ctDelay(uint32_t ms){
-  HAL_Delay(ms);
-}
-void ctMessagePut(uint16_t x,uint16_t y,uint8_t press){
-  ctX=x; ctY=y; ctPress=press;
-}
-uint8_t ctMessageGet(uint16_t* x,uint16_t* y,uint8_t* press){
-  *x=ctX; *y=ctY; *press=ctPress;
-  return 1;
-}
-void ctQueueCreate(){}
+//OS dependet functions
+#if OS_USED == 0
+  //No OS
+  static int16_t ctX=0;
+  static int16_t ctY=0;
+  static uint8_t ctPress=0;
+
+  void ctDelay(uint32_t ms){
+    HAL_Delay(ms);
+  }
+  void ctMessagePut(uint16_t x,uint16_t y,uint8_t press){
+    ctX=x; ctY=y; ctPress=press;
+  }
+  uint8_t ctMessageGet(uint16_t* x,uint16_t* y,uint8_t* press){
+    *x=ctX; *y=ctY; *press=ctPress;
+    return 1;
+  }
+  void ctQueueCreate(){}
+#else
+#include "cmsis_os.h"
+  typedef struct{
+    int16_t x;
+    int16_t y;
+    uint8_t press;
+  }point_t;
+  
+  osMessageQId CTPQueueHandle;
+  uint8_t CTPQueueBuffer[ 4 * sizeof(point_t) ];
+  osStaticMessageQDef_t CTPQueueControlBlock;
+
+  void ctDelay(uint32_t ms){
+    osThreadId id = osThreadGetId ();
+    if (id == NULL) { // Failed to get the id; not in a thread
+      HAL_Delay(ms); //HAL delay
+    }else{
+      osDelay(ms);  //Task delay
+    }
+  }
+  
+  void ctMessagePut(uint16_t x,uint16_t y,uint8_t press){
+    point_t p;
+    p.x=x; p.y=y; p.press=press;
+    //osMessagePut(CTPQueueHandle,(uint32_t)&p,0);
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xQueueSendFromISR(CTPQueueHandle, &p, &xHigherPriorityTaskWoken );
+    portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
+  }
+  uint8_t ctMessageGet(uint16_t* x,uint16_t* y,uint8_t* press){
+    point_t p;
+    
+    //osEvent evt = osMessageGet(CTPQueueHandle, 0);
+    //if(evt.status == osEventMessage){
+    if(xQueueReceive(CTPQueueHandle, &p,0)==pdTRUE){
+      *x=p.x; *y=p.y; *press=p.press;
+      return xQueueIsQueueEmptyFromISR(CTPQueueHandle)?1:2;
+    }
+    return 0;
+  }
+
+  void ctQueueCreate(){
+    osMessageQStaticDef(CTPQueue, 4, point_t, CTPQueueBuffer, &CTPQueueControlBlock);
+    CTPQueueHandle = osMessageCreate(osMessageQ(CTPQueue), NULL);
+  }
+#endif
+
 
 //MCU dependet functions
 
@@ -109,7 +160,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 
 void I2C_Touch_Init(void){
     HAL_NVIC_DisableIRQ(CTP_INT_IRQn);
-    HAL_NVIC_SetPriority(CTP_INT_IRQn, 2, 0);
+    HAL_NVIC_SetPriority(CTP_INT_IRQn, 15, 15);
     GPIO_InitTypeDef GPIO_Initure;
 	
 	__HAL_RCC_GPIOB_CLK_ENABLE();		//Turn on the GPIOH clock

@@ -7,9 +7,13 @@
 #define CTP_MAX_TOUCH    1 //1-10
 																		 
 int32_t CTP_Init_Panel(void);
-#ifndef LVGL_H
+
+#define  LVGL_USED 1
+
+#if  LVGL_USED==0
 uint8_t CTP_read(uint16_t* x, uint16_t* y, uint8_t* pressed);
 #else
+#include "lvgl/lvgl.h"
 bool CTP_read(lv_indev_drv_t * indev_drv, lv_indev_data_t * data);
 #endif
 
