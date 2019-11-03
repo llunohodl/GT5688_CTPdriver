@@ -86,12 +86,14 @@ struct i2c_msg {
 	
 #define CTP_DEBUG_ON         	0
 // Log define
-#define CTP_INFO(fmt,arg...)           printf("I> "fmt"\n",##arg)
-#define CTP_ERROR(fmt,arg...)          printf("E> "fmt"\n",##arg)
 #if CTP_DEBUG_ON>0 
-#define CTP_DEBUG(fmt,arg...)          printf("D> [%d]"fmt"\n",__LINE__, ##arg);
+#define CTP_INFO(fmt,arg...)           printf("I> "fmt"\r\n",##arg)
+#define CTP_ERROR(fmt,arg...)          printf("E> "fmt"\r\n",##arg)
+#define CTP_DEBUG(fmt,arg...)          printf("D> [%d]"fmt"\r\n",__LINE__, ##arg);
 #else
-#define CTP_DEBUG(fmt,arg...)          
+#define CTP_DEBUG(fmt,arg...)   
+#define CTP_INFO(fmt,arg...)           
+#define CTP_ERROR(fmt,arg...)         
 #endif
 
 
