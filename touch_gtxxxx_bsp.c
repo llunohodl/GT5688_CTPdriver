@@ -3,6 +3,15 @@
 #include "touch_gtxxxx_defs.h"
 #include "touch_gtxxxx.h"
 
+//HW configuration
+#define CTP_GPIO_RCC_ENABLE   __HAL_RCC_GPIOH_CLK_ENABLE();
+#define CTP_RST_PIN           GPIO_PIN_4
+#define CTP_RST_PORT          GPIOB
+#define CTP_INT_PIN           GPIO_PIN_5
+#define CTP_INT_PORT          GPIOB
+#define CTP_INT_IRQn          EXTI9_5_IRQn
+#define CTP_INT_IRQHandler    EXTI9_5_IRQHandler
+
 extern I2C_HandleTypeDef hi2c1;  //main.c from CubeMX 
 void MX_I2C1_Init(void);         //main.c from CubeMX 
 void CTP_TS_Work_Func(void);     //touch_gtxxxx.c
@@ -23,11 +32,14 @@ void CTP_TS_Work_Func(void);     //touch_gtxxxx.c
     ctX=x; ctY=y; ctPress=press;
   }
   uint8_t ctMessageGet(uint16_t* x,uint16_t* y,uint8_t* press){
+    HAL_NVIC_DisableIRQ(CTP_INT_IRQn);
     *x=ctX; *y=ctY; *press=ctPress;
+    HAL_NVIC_EnableIRQ(CTP_INT_IRQn);
     return 1;
   }
   void ctQueueCreate(){}
 #else
+#define QUEUE_USED 0
 #include "cmsis_os.h"
   typedef struct{
     int16_t x;
@@ -35,9 +47,11 @@ void CTP_TS_Work_Func(void);     //touch_gtxxxx.c
     uint8_t press;
   }point_t;
   
-  osMessageQId CTPQueueHandle;
-  uint8_t CTPQueueBuffer[ 4 * sizeof(point_t) ];
-  osStaticMessageQDef_t CTPQueueControlBlock;
+  #if QUEUE_USED>0
+    osMessageQId CTPQueueHandle;
+    uint8_t CTPQueueBuffer[ 4 * sizeof(point_t) ];
+    osStaticMessageQDef_t CTPQueueControlBlock;
+  #endif
 
   void ctDelay(uint32_t ms){
     osThreadId id = osThreadGetId ();
@@ -47,43 +61,48 @@ void CTP_TS_Work_Func(void);     //touch_gtxxxx.c
       osDelay(ms);  //Task delay
     }
   }
-  
-  void ctMessagePut(uint16_t x,uint16_t y,uint8_t press){
+  #if QUEUE_USED==0
     point_t p;
-    p.x=x; p.y=y; p.press=press;
-    //osMessagePut(CTPQueueHandle,(uint32_t)&p,0);
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xQueueSendFromISR(CTPQueueHandle, &p, &xHigherPriorityTaskWoken );
-    portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
+  #endif
+  void ctMessagePut(uint16_t x,uint16_t y,uint8_t press){
+    #if QUEUE_USED>0
+      point_t p;
+      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      xQueueSendFromISR(CTPQueueHandle, &p, &xHigherPriorityTaskWoken );
+      portEND_SWITCHING_ISR(xHigherPriorityTaskWoken);
+    #else
+      p.x=x; p.y=y; p.press=press;
+    #endif
   }
   uint8_t ctMessageGet(uint16_t* x,uint16_t* y,uint8_t* press){
-    point_t p;
-    
-    //osEvent evt = osMessageGet(CTPQueueHandle, 0);
-    //if(evt.status == osEventMessage){
-    if(xQueueReceive(CTPQueueHandle, &p,0)==pdTRUE){
+    #if QUEUE_USED>0
+      point_t p;
+      if(xQueueReceive(CTPQueueHandle, &p,0)==pdTRUE){
+        *x=p.x; *y=p.y; *press=p.press;
+        return xQueueIsQueueEmptyFromISR(CTPQueueHandle)?1:2;
+      }
+      return 0;
+    #else
+      HAL_NVIC_DisableIRQ(CTP_INT_IRQn);
       *x=p.x; *y=p.y; *press=p.press;
-      return xQueueIsQueueEmptyFromISR(CTPQueueHandle)?1:2;
-    }
-    return 0;
+      HAL_NVIC_EnableIRQ(CTP_INT_IRQn);
+    #endif
+    return 1;
   }
 
   void ctQueueCreate(){
-    osMessageQStaticDef(CTPQueue, 4, point_t, CTPQueueBuffer, &CTPQueueControlBlock);
-    CTPQueueHandle = osMessageCreate(osMessageQ(CTPQueue), NULL);
+    #if QUEUE_USED>0
+      osMessageQStaticDef(CTPQueue, 4, point_t, CTPQueueBuffer, &CTPQueueControlBlock);
+      CTPQueueHandle = osMessageCreate(osMessageQ(CTPQueue), NULL);*/
+    #else
+      p.press=0;
+    #endif
   }
 #endif
 
 
 //MCU dependet functions
 
-#define CTP_GPIO_RCC_ENABLE   __HAL_RCC_GPIOH_CLK_ENABLE();
-#define CTP_RST_PIN           GPIO_PIN_4
-#define CTP_RST_PORT          GPIOB
-#define CTP_INT_PIN           GPIO_PIN_5
-#define CTP_INT_PORT          GPIOB
-#define CTP_INT_IRQn          EXTI9_5_IRQn
-#define CTP_INT_IRQHandler    EXTI9_5_IRQHandler
 
 uint8_t Exti_EN=0;
 

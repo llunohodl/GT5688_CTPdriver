@@ -277,31 +277,32 @@ void CTP_TS_Work_Func(void){
         CTP_ERROR("I2C transfer error. errno:%d\n ", ret);
         return;
 	}
-	
-	finger = point_data[CTP_ADDR_LENGTH]; // Status register data
-
-	CTP_DEBUG("I2C finger:%X",finger);
-
-	if(finger == 0x80){		// No data, exit
+    
+    finger = point_data[CTP_ADDR_LENGTH]; // Status register data
+    CTP_DEBUG("I2C finger:%X",finger);
+    
+    if((finger&0x80)&&((finger&0x0f)<=CTP_MAX_TOUCH)){
+      ret = CTP_I2C_Write(end_cmd, 3);
+      if (ret < 0){
+          CTP_INFO("I2C write end_cmd error!");
+      }
+    }
+	if((finger&0x8F) == 0x80){		// No data, exit
 		if(IsTouch){
 			CTP_Touch_Up();
 			IsTouch=0;
 		}
-	}else if(finger & 0x80){ //Bit7==1 - coordinate (or key) is ready for host to read
-		touch_num = finger & 0x0f; // get touch_num
-        if (touch_num <= CTP_MAX_TOUCH){
-          IsTouch=1;
-          input_x  = point_data[4] | (point_data[5] << 8);	//x coordinates
-          input_y  = point_data[6] | (point_data[7] << 8);	//y coordinates
-          input_w  = point_data[8] | (point_data[9] << 8);	//size
-          CTP_Touch_Down(input_x, input_y, input_w);        //data processing
-        }
+        return;
 	}
+    if((finger & 0x0F) && ((finger & 0x0F)<=CTP_MAX_TOUCH)){ //Bit7==1 - coordinate (or key) is ready for host to read
+        IsTouch=1;
+        input_x  = point_data[4] | (point_data[5] << 8);	//x coordinates
+        input_y  = point_data[6] | (point_data[7] << 8);	//y coordinates
+        input_w  = point_data[8] | (point_data[9] << 8);	//size
+        CTP_Touch_Down(input_x, input_y, input_w);        //data processing
+	} 
 
-    ret = CTP_I2C_Write(end_cmd, 3);
-    if (ret < 0){
-        CTP_INFO("I2C write end_cmd error!");
-    }
+    
 }
 
 #if  LVGL_USED==0
@@ -311,15 +312,15 @@ uint8_t CTP_read(uint16_t* x, uint16_t* y, uint8_t* pressed){
 }
 #else
 bool CTP_read(lv_indev_drv_t * indev_drv, lv_indev_data_t * data){
-  uint8_t press;    
-  uint16_t x,y; 
+  static uint8_t press=LV_INDEV_STATE_REL;    
+  static uint16_t x,y; 
   uint8_t ret=0;
   if(ret=ctMessageGet(&x,&y,&press)){
     data->point.x = x;
     data->point.y = y;
     data->state = press ? LV_INDEV_STATE_PR : LV_INDEV_STATE_REL;
   }
-  return ret>1? true:false;
+  return ret>1? true:false; //Return true if additional read (from FIFO) needed
 }
 #endif
 
