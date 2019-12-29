@@ -265,7 +265,6 @@ void CTP_TS_Work_Func(void){
 	static uint8_t IsTouch=0;
 	uint8_t  end_cmd[3] = {CTP_READ_COOR_ADDR >> 8, CTP_READ_COOR_ADDR & 0xFF, 0};
 	uint8_t  point_data[2 + 1 + 8 * CTP_MAX_TOUCH + 1]={CTP_READ_COOR_ADDR >> 8, CTP_READ_COOR_ADDR & 0xFF};
-	uint8_t  touch_num = 0;
 	uint8_t  finger = 0;
 
 	int32_t input_x = 0;
@@ -346,12 +345,9 @@ static int8_t CTP_WakeUp_Sleep(void){
 }
 
 static int32_t CTP_Get_Info(void){
+  #if CTP_DEBUG_ON>0
     uint8_t opr_buf[10] = {0};
     int32_t ret = 0;
-
-    uint16_t abs_x_max = touch_param[touchIC].max_width;
-    uint16_t abs_y_max = touch_param[touchIC].max_height;
-    uint8_t int_trigger_type = CTP_INT_TRIGGER;
         
     opr_buf[0] = (uint8_t)((CTP_REG_CONFIG_DATA+1) >> 8);
     opr_buf[1] = (uint8_t)((CTP_REG_CONFIG_DATA+1) & 0xFF);
@@ -361,8 +357,9 @@ static int32_t CTP_Get_Info(void){
         return FAIL;
     }
     
-    abs_x_max = (opr_buf[3] << 8) + opr_buf[2];
-    abs_y_max = (opr_buf[5] << 8) + opr_buf[4];
+    uint16_t abs_x_max = (opr_buf[3] << 8) + opr_buf[2];
+    uint16_t abs_y_max = (opr_buf[5] << 8) + opr_buf[4];
+    
     opr_buf[0] = (uint8_t)((CTP_REG_CONFIG_DATA+6) >> 8);
     opr_buf[1] = (uint8_t)((CTP_REG_CONFIG_DATA+6) & 0xFF);
     
@@ -370,11 +367,12 @@ static int32_t CTP_Get_Info(void){
     if (ret < 0){
         return FAIL;
     }
-    int_trigger_type = opr_buf[2] & 0x03;
+    
+    uint8_t int_trigger_type = opr_buf[2] & 0x03;
     
     CTP_INFO("X_MAX = %d, Y_MAX = %d, TRIGGER = 0x%02x",
             abs_x_max,abs_y_max,int_trigger_type);
-    
+#endif
     return SUCCESS;    
 }
 
