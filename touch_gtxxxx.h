@@ -8,6 +8,8 @@
 																		 
 int32_t CTP_Init_Panel(void);
 
+void CTP_TS_Work_Func(); 
+
 #define  LVGL_USED 1
 
 #if  LVGL_USED==0

@@ -3,6 +3,8 @@
 #include "touch_gtxxxx_defs.h"
 #include "touch_gtxxxx.h"
 
+
+
 //HW configuration
 #define CTP_GPIO_RCC_ENABLE   __HAL_RCC_GPIOH_CLK_ENABLE();
 #define CTP_RST_PIN           GPIO_PIN_4
@@ -170,10 +172,12 @@ void MX_I2C1_Init(void){
 }
 #endif
 
+extern SemaphoreHandle_t CtpSem;
+
 //In CubeMX exti must be swihed on
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
   if(GPIO_Pin == CTP_INT_PIN){
-        CTP_TS_Work_Func();    
+      xSemaphoreGiveFromISR(CtpSem,NULL);
   }  
 }
 

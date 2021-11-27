@@ -280,12 +280,12 @@ void CTP_TS_Work_Func(void){
     finger = point_data[CTP_ADDR_LENGTH]; // Status register data
     CTP_DEBUG("I2C finger:%X",finger);
     
-    if((finger&0x80)&&((finger&0x0f)<=CTP_MAX_TOUCH)){
-      ret = CTP_I2C_Write(end_cmd, 3);
-      if (ret < 0){
-          CTP_INFO("I2C write end_cmd error!");
-      }
+    //Stop read this touch
+    ret = CTP_I2C_Write(end_cmd, 3);
+    if (ret < 0){
+        CTP_INFO("I2C write end_cmd error!");
     }
+    
 	if((finger&0x8F) == 0x80){		// No data, exit
 		if(IsTouch){
 			CTP_Touch_Up();
@@ -300,8 +300,6 @@ void CTP_TS_Work_Func(void){
         input_w  = point_data[8] | (point_data[9] << 8);	//size
         CTP_Touch_Down(input_x, input_y, input_w);        //data processing
 	} 
-
-    
 }
 
 #if  LVGL_USED==0
